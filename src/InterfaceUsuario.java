@@ -30,9 +30,10 @@ public class InterfaceUsuario {
             GERENCIAR EMPRÉSTIMOS
             6 - Realizar Empréstimo
             7 - Buscar empréstimo por usuário
-            8 - Devolver livro
+            8 - Listar todos os livros por autor
+            9 - Devolver livro
 
-            9 - Sair
+            10 - Sair
             """);
   }
 
@@ -132,15 +133,15 @@ public class InterfaceUsuario {
     }
   }
 
+  public void todosOsLivrosPorAutor(){
+    biblioteca.livrosPorAutor();
+  }
+
   public void devolverLivro() throws LivroIndisponivelException {
     System.out.println("Digite o titulo do livro para alugar: ");
     String titulo = scanner.nextLine();
     System.out.println("Digite seu email de login: ");
     String email = scanner.nextLine();
-    //    System.out.println(
-    //        biblioteca.devolverLivro(titulo, email)
-    //            ? "Livro devolvido com sucesso!"
-    //            : "Não foi possível devolver esse!");
     boolean devolveu = biblioteca.devolverLivro(titulo, email);
     if (!devolveu) {
       throw new LivroIndisponivelException(

@@ -2,6 +2,7 @@ package com.EBAC.biblioteca;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Biblioteca implements Serializable {
   private static final long serialVersionUID = 1L;
@@ -64,7 +65,7 @@ public class Biblioteca implements Serializable {
   }
 
   public boolean CadastrarUsuario(String nome, String email) {
-    if(nome == null || email == null) return false;
+    if (nome == null || email == null) return false;
     Usuario usuario = new Usuario(nome, email);
 
     String emailKey = usuario.getEmail();
@@ -104,13 +105,25 @@ public class Biblioteca implements Serializable {
     if (emprestimoOpt.isEmpty()) return false;
 
     Emprestimo emprestimo = emprestimoOpt.get();
-    Livro livro = emprestimo.getLivro();
+    Optional<Livro> livroOficialOpt = buscarLivro(titulo);
 
-    if (livro == null) return false;
+    if (livroOficialOpt.isPresent()){
+      livroOficialOpt.get().setEmprestado(false);
+    }
 
-    livro.setEmprestado(false);
     emprestimos.remove(emprestimo);
     return true;
+  }
+
+  public void livrosPorAutor() {
+    Map<String, List<Livro>> livrosPorAutor =
+        livros.stream().collect(Collectors.groupingBy(Livro::getAutor));
+
+    livrosPorAutor.forEach(
+        (nomeAutor, listaLivros) -> {
+          System.out.println("Autor: " + nomeAutor);
+          listaLivros.forEach(livro -> System.out.println(" -" + livro.getTitulo()));
+        });
   }
 
   public void salvarDados() {
@@ -121,6 +134,7 @@ public class Biblioteca implements Serializable {
     Serializador.salvar(ARQUIVOS_HISTORICO, this.emprestimos);
   }
 
+  @SuppressWarnings("unchecked")
   public void carregarDados() {
     DadosCadastrais dados = (DadosCadastrais) Serializador.carregar(ARQUIVOS_DADOS);
 

@@ -52,17 +52,18 @@ public class Main {
           }
         }
         case 7 -> interfaceUsuario.buscarEmprestimos();
-        case 8 -> {
+        case 8 -> interfaceUsuario.todosOsLivrosPorAutor();
+        case 9 -> {
           try {
             interfaceUsuario.devolverLivro();
           } catch (LivroIndisponivelException e) {
             System.out.println(e.getMessage());
           }
         }
-        case 9 -> System.out.println("Saindo...");
+        case 10 -> System.out.println("Saindo...");
         default -> System.out.println("Tente novamente");
       }
-    } while (opcao != 9);
+    } while (opcao != 10);
 
     biblioteca.salvarDados();
     scanner.close();
