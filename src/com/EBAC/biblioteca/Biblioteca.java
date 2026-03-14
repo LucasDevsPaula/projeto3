@@ -1,17 +1,16 @@
 package com.EBAC.biblioteca;
 
-import java.io.Serializable;
+import com.EBAC.services.EmprestimoService;
+import com.EBAC.services.LivroService;
+import com.EBAC.services.UsuarioService;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Biblioteca implements Serializable {
-  private static final long serialVersionUID = 1L;
-  private Set<Livro> livros = new HashSet<>();
-  private Map<String, Usuario> usuarios = new HashMap<>();
-  private List<Emprestimo> emprestimos = new ArrayList<>();
-
-  private final String ARQUIVOS_DADOS = "biblioteca_dados.dat";
-  private final String ARQUIVOS_HISTORICO = "biblioteca_historico.dat";
+public class Biblioteca {
+  private UsuarioService usuarioService = new UsuarioService();
+  private LivroService livroService = new LivroService();
+  private EmprestimoService emprestimoService = new EmprestimoService();
 
   public boolean cadastrarLivro(String titulo, String autor, int anoDePublicacao) {
     if (titulo == null
@@ -19,138 +18,88 @@ public class Biblioteca implements Serializable {
         || autor == null
         || autor.isBlank()
         || anoDePublicacao <= 1000) return false;
-    livros.add(new Livro(titulo, autor, anoDePublicacao));
+    try {
+      Livro livro = new Livro(titulo, autor, anoDePublicacao);
+      livroService.cadastrarLivro(livro);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+
     return true;
   }
 
   public List<Livro> listarLivros() {
-    return livros.stream().sorted(Comparator.comparing(Livro::getAnoPublicacao)).toList();
+    return livroService.listarLivros().stream()
+        .sorted(Comparator.comparing(Livro::getAnoPublicacao))
+        .toList();
   }
 
   public Optional<Livro> buscarLivro(String titulo) {
     if (titulo == null || titulo.isBlank()) return Optional.empty();
-    return livros.stream()
-        .filter(livro -> livro.getTitulo() != null && livro.getTitulo().equalsIgnoreCase(titulo))
-        .findFirst();
+    return livroService.buscarLivro(titulo);
   }
 
   public boolean AlugarLivro(String titulo, String email) {
-    if (titulo == null || email == null) return false;
-    Optional<Usuario> usuario = buscarUsuario(email);
-    if (usuario.isEmpty()) return false;
-
-    Optional<Livro> optLivro = buscarLivro(titulo);
-    if (optLivro.isEmpty()) return false;
-    Livro livro = optLivro.get();
-
-    if (livro.isEmprestado()) return false;
-
-    emprestimos.add(new Emprestimo(livro, usuario.get()));
-    livro.setEmprestado(true);
-    return true;
+    return emprestimoService.alugarLivro(titulo, email);
   }
 
   public List<Emprestimo> buscarEmprestimos(String email) {
     if (email == null || email.isBlank()) return Collections.emptyList();
-    return emprestimos.stream()
-        .filter(
-            emprestimo -> {
-              Usuario usuario = emprestimo.getUsuario();
-              return usuario.getEmail() != null && usuario.getEmail().equalsIgnoreCase(email);
-            })
-        .sorted(
-            Comparator.comparing(
-                Emprestimo::getDataAluguel, Comparator.nullsLast(Comparator.naturalOrder())))
-        .toList();
+    return emprestimoService.buscarEmprestimosPorUsuario(email);
   }
 
   public boolean CadastrarUsuario(String nome, String email) {
     if (nome == null || email == null) return false;
-    Usuario usuario = new Usuario(nome, email);
-
-    String emailKey = usuario.getEmail();
-
-    if (emailKey == null || emailKey.isBlank()) return false;
-
-    if (usuarios.containsKey(emailKey)) return false;
-
-    usuarios.put(emailKey, usuario);
+    try {
+      Usuario usuario = new Usuario(nome, email);
+      usuarioService.criarUsuario(usuario);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
     return true;
   }
 
   public List<Usuario> listarUsuarios() {
-    return usuarios.values().stream().sorted(Comparator.comparing(Usuario::getNome)).toList();
+    return usuarioService.listaUsuario().stream()
+        .sorted(Comparator.comparing(Usuario::getNome))
+        .toList();
   }
 
-  public Optional<Usuario> buscarUsuario(String email) {
-    if (email == null || email.isBlank()) return Optional.empty();
-    return Optional.ofNullable(usuarios.get(email));
-  }
-
-  public boolean devolverLivro(String titulo, String email) {
-    if (titulo == null || titulo.isBlank() || email == null || email.isBlank()) return false;
-
-    List<Emprestimo> emprestimosDoUsuario = buscarEmprestimos(email);
-    Optional<Emprestimo> emprestimoOpt =
-        emprestimosDoUsuario.stream()
-            .filter(
-                emprestimo -> {
-                  Livro livro = emprestimo.getLivro();
-                  return livro != null
-                      && livro.getTitulo() != null
-                      && livro.getTitulo().equalsIgnoreCase(titulo);
-                })
-            .findFirst();
-
-    if (emprestimoOpt.isEmpty()) return false;
-
-    Emprestimo emprestimo = emprestimoOpt.get();
-    Optional<Livro> livroOficialOpt = buscarLivro(titulo);
-
-    if (livroOficialOpt.isPresent()){
-      livroOficialOpt.get().setEmprestado(false);
-    }
-
-    emprestimos.remove(emprestimo);
-    return true;
+  public boolean devolverLivro(String titulo) {
+    if (titulo == null || titulo.isBlank()) return false;
+    return emprestimoService.devolverLivro(titulo);
   }
 
   public void livrosPorAutor() {
+    // Buscar livros atualizados do banco
+    List<Livro> lista = livroService.listarLivros();
+
+    if (lista == null || lista.isEmpty()) {
+      System.out.println("Nenhum livro cadastrado.");
+      return;
+    }
     Map<String, List<Livro>> livrosPorAutor =
-        livros.stream().collect(Collectors.groupingBy(Livro::getAutor));
+        lista.stream()
+            .collect(
+                Collectors.groupingBy(
+                    livro -> {
+                      String autor = livro.getAutor();
+                      if (autor == null || autor.isBlank()) return "<Sem autor>";
+                      return autor;
+                    },
+                    TreeMap::new,
+                    Collectors.toList()));
 
     livrosPorAutor.forEach(
-        (nomeAutor, listaLivros) -> {
-          System.out.println("Autor: " + nomeAutor);
-          listaLivros.forEach(livro -> System.out.println(" -" + livro.getTitulo()));
+        (autor, livrosAutor) -> {
+          System.out.println("Autor: " + autor);
+          livrosAutor.stream()
+              .map(Livro::getTitulo)
+              .filter(titulo -> titulo != null && !titulo.isBlank())
+              .sorted(String::compareToIgnoreCase)
+              .forEach(titulo -> System.out.println(" -" + titulo));
         });
-  }
-
-  public void salvarDados() {
-    DadosCadastrais dados = new DadosCadastrais(this.livros, this.usuarios);
-
-    Serializador.salvar(ARQUIVOS_DADOS, dados);
-
-    Serializador.salvar(ARQUIVOS_HISTORICO, this.emprestimos);
-  }
-
-  @SuppressWarnings("unchecked")
-  public void carregarDados() {
-    DadosCadastrais dados = (DadosCadastrais) Serializador.carregar(ARQUIVOS_DADOS);
-
-    if (dados != null) {
-      this.livros = dados.getLivros();
-      this.usuarios = dados.getUsuarios();
-      System.out.println(
-          "Catálogo carregado: " + livros.size() + " livros, " + usuarios.size() + " usuários.");
-    } else {
-      System.out.println("Nenhum dado cadastral encontrado. Iniciando vazio.");
-    }
-
-    Object historico = Serializador.carregar(ARQUIVOS_HISTORICO);
-    if (historico != null) {
-      this.emprestimos = (List<Emprestimo>) historico;
-      System.out.println("Histórico carregado: " + emprestimos.size() + " empréstimos.");
-    }
   }
 }

@@ -3,18 +3,28 @@ package com.EBAC.biblioteca;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class Livro implements Serializable, Comparable<Livro> {
+public class Livro implements Comparable<Livro> {
+  private Integer id;
   private String titulo;
   private String autor;
   private int anoPublicacao;
   private boolean emprestado;
-  private static final long serialVersionUID = 1L;
+
+  public Livro() {}
 
   public Livro(String titulo, String autor, int anoPublicacao) {
     this.titulo = titulo;
     this.autor = autor;
     this.anoPublicacao = anoPublicacao;
     this.emprestado = false;
+  }
+
+  public Integer getId() {
+    return id;
+  }
+
+  public void setId(Integer id) {
+    this.id = id;
   }
 
   public String getTitulo() {

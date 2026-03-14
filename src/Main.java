@@ -14,8 +14,6 @@ public class Main {
 
     System.out.println("Bem vindo ao Sistema de Gerenciamento de Biblioteca Digital.");
 
-    biblioteca.carregarDados();
-
     do {
       System.out.println("Escolha uma das opções. ");
       interfaceUsuario.mostrarFuncoes();
@@ -65,7 +63,6 @@ public class Main {
       }
     } while (opcao != 10);
 
-    biblioteca.salvarDados();
     scanner.close();
   }
 }

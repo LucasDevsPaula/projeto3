@@ -1,5 +1,4 @@
 import com.EBAC.biblioteca.Biblioteca;
-import com.EBAC.biblioteca.Emprestimo;
 import com.EBAC.errors.*;
 
 import java.util.InputMismatchException;
@@ -74,7 +73,7 @@ public class InterfaceUsuario {
       Optional<?> resultado = biblioteca.buscarLivro(livro);
       if (resultado.isEmpty()) {
         throw new LivroNaoEncontrado("Livro '" + livro + "' não encontrado.");
-      }else {
+      } else {
         System.out.println(resultado);
       }
     } catch (LivroNaoEncontrado e) {
@@ -133,16 +132,14 @@ public class InterfaceUsuario {
     }
   }
 
-  public void todosOsLivrosPorAutor(){
+  public void todosOsLivrosPorAutor() {
     biblioteca.livrosPorAutor();
   }
 
   public void devolverLivro() throws LivroIndisponivelException {
     System.out.println("Digite o titulo do livro para alugar: ");
     String titulo = scanner.nextLine();
-    System.out.println("Digite seu email de login: ");
-    String email = scanner.nextLine();
-    boolean devolveu = biblioteca.devolverLivro(titulo, email);
+    boolean devolveu = biblioteca.devolverLivro(titulo);
     if (!devolveu) {
       throw new LivroIndisponivelException(
           "Não é possível devolver o livro '" + titulo + "' no momento.");
